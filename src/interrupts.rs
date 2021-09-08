@@ -1,6 +1,5 @@
 use crate::gdt;
 use crate::hlt_loop;
-use crate::print;
 use crate::println;
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
@@ -31,7 +30,7 @@ lazy_static! {
     };
 }
 extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
-    // print!(".");
+    // cosmo_os::print!(".");
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Timer.as_u8());

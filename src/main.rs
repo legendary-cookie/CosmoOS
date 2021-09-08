@@ -11,8 +11,9 @@ use core::panic::PanicInfo;
 use x86_64::structures::paging::Page;
 
 use cosmo_os::println;
+use cosmo_os::task::executor::Executor;
 use cosmo_os::task::keyboard;
-use cosmo_os::task::{simple_executor::SimpleExecutor, Task};
+use cosmo_os::task::Task;
 
 entry_point!(kernel_main);
 
@@ -36,7 +37,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     // ALLOCATOR
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
     // ASYNC TEST
-    let mut executor = SimpleExecutor::new();
+    let mut executor = Executor::new();
     executor.spawn(Task::new(example_task()));
     executor.spawn(Task::new(keyboard::print_keypresses()));
     executor.run();

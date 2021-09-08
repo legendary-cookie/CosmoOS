@@ -1,7 +1,4 @@
 pub extern crate alloc;
-use alloc::alloc::{GlobalAlloc, Layout};
-use buddy_system_allocator::LockedHeap;
-use core::ptr::null_mut;
 use x86_64::{
     structures::paging::{
         mapper::MapToError, FrameAllocator, Mapper, Page, PageTableFlags, Size4KiB,
@@ -9,7 +6,17 @@ use x86_64::{
     VirtAddr,
 };
 
+pub mod fixed_size_block;
+
+#[cfg(not(feature = "buddyalloc"))]
+use fixed_size_block::FixedSizeBlockAllocator;
+#[cfg(not(feature = "buddyalloc"))]
 #[global_allocator]
+static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(FixedSizeBlockAllocator::new());
+
+#[cfg(feature = "buddyalloc")]
+use buddy_system_allocator::LockedHeap;
+#[cfg(feature = "buddyalloc")]
 static ALLOCATOR: LockedHeap<32> = LockedHeap::<32>::empty();
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
@@ -42,14 +49,19 @@ pub fn init_heap(
     Ok(())
 }
 
-pub struct Dummy;
+/// A wrapper around spin::Mutex to permit trait implementations.
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
 
-unsafe impl GlobalAlloc for Dummy {
-    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
-        null_mut()
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
     }
 
-    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
-        panic!("dealloc should never be called")
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
     }
 }
