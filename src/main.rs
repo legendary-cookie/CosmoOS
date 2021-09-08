@@ -4,8 +4,11 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+use core::panic::PanicInfo;
+
 #[macro_use]
 mod vga_buffer;
+
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -15,12 +18,19 @@ pub extern "C" fn _start() -> ! {
     loop {}
 }
 
-use core::panic::PanicInfo;
-
 /// This function is called on panic.
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
+    loop {}
+}
+
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    println!("[failed]\n");
+    println!("Error: {}\n", info);
     loop {}
 }
 
@@ -30,28 +40,11 @@ fn test_runner(tests: &[&dyn Fn()]) {
     for test in tests {
         test();
     }
-    exit_qemu(QemuExitCode::Success);
 }
 
 #[test_case]
 fn trivial_assertion() {
     print!("trivial assertion... ");
-    assert_eq!(1, 1);
+    assert_eq!(1, 2);
     println!("[ok]");
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum QemuExitCode {
-    Success = 0x10,
-    Failed = 0x11,
-}
-
-pub fn exit_qemu(exit_code: QemuExitCode) {
-    use x86_64::instructions::port::Port;
-
-    unsafe {
-        let mut port = Port::new(0xf4);
-        port.write(exit_code as u32);
-    }
 }
