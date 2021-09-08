@@ -9,7 +9,6 @@ use core::panic::PanicInfo;
 #[macro_use]
 mod vga_buffer;
 
-
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
@@ -35,16 +34,24 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
+pub fn test_runner(tests: &[&dyn Testable]) {
     println!("Running {} tests", tests.len());
     for test in tests {
-        test();
+        test.run(); // new
     }
 }
 
-#[test_case]
-fn trivial_assertion() {
-    print!("trivial assertion... ");
-    assert_eq!(1, 2);
-    println!("[ok]");
+pub trait Testable {
+    fn run(&self) -> ();
+}
+
+impl<T> Testable for T
+where
+    T: Fn(),
+{
+    fn run(&self) {
+        print!("{}...\t", core::any::type_name::<T>());
+        self();
+        println!("[ok]");
+    }
 }
