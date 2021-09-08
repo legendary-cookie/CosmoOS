@@ -6,15 +6,12 @@
 
 extern crate alloc;
 
+use alloc::{boxed::Box, vec::Vec};
+use cosmo_os::allocator::HEAP_SIZE;
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
 entry_point!(main);
-
-#[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    cosmo_os::test_panic_handler(info)
-}
 
 fn main(boot_info: &'static BootInfo) -> ! {
     use cosmo_os::allocator;
@@ -26,12 +23,9 @@ fn main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-
     test_main();
     loop {}
 }
-
-use alloc::boxed::Box;
 
 #[test_case]
 fn simple_allocation() {
@@ -40,8 +34,6 @@ fn simple_allocation() {
     assert_eq!(*heap_value_1, 41);
     assert_eq!(*heap_value_2, 13);
 }
-
-use alloc::vec::Vec;
 
 #[test_case]
 fn large_vec() {
@@ -53,8 +45,6 @@ fn large_vec() {
     assert_eq!(vec.iter().sum::<u64>(), (n - 1) * n / 2);
 }
 
-use cosmo_os::allocator::HEAP_SIZE;
-
 #[test_case]
 fn many_boxes() {
     for i in 0..HEAP_SIZE {
@@ -65,10 +55,15 @@ fn many_boxes() {
 
 #[test_case]
 fn many_boxes_long_lived() {
-    let long_lived = Box::new(1);
+    let long_lived = Box::new(1); // new
     for i in 0..HEAP_SIZE {
         let x = Box::new(i);
         assert_eq!(*x, i);
     }
-    assert_eq!(*long_lived, 1);
+    assert_eq!(*long_lived, 1); // new
+}
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    cosmo_os::test_panic_handler(info)
 }
