@@ -4,14 +4,17 @@
 #![test_runner(cosmo_os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+extern crate alloc;
+
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use cosmo_os::{memory::translate_addr, println};
+use cosmo_os::println;
 use x86_64::structures::paging::Page;
 
 entry_point!(kernel_main);
 
 fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use cosmo_os::allocator;
     use cosmo_os::memory;
     use cosmo_os::memory::BootInfoFrameAllocator;
     use x86_64::VirtAddr;
@@ -26,6 +29,8 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
     unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
+
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
     #[cfg(test)]
     test_main();
