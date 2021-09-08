@@ -2,7 +2,6 @@ use crate::gdt;
 use crate::print;
 use crate::println;
 use lazy_static::lazy_static;
-use pc_keyboard::DecodedKey;
 use pic8259::ChainedPics;
 use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
