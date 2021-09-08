@@ -5,6 +5,9 @@ use core::{future::Future, pin::Pin};
 pub mod keyboard;
 pub mod simple_executor;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+struct TaskId(u64);
+
 pub struct Task {
     future: Pin<Box<dyn Future<Output = ()>>>,
 }
