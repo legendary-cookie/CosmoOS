@@ -32,20 +32,17 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     let page = Page::containing_address(VirtAddr::new(0xdeadbeef));
     memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
-    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
     // ALLOCATOR
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
-    // ASYNC TEST
+    // TEST MAIN
+    #[cfg(test)]
+    test_main();
+    // ASYNC
     let mut executor = Executor::new();
     executor.spawn(Task::new(example_task()));
     executor.spawn(Task::new(keyboard::print_keypresses()));
     executor.run();
-    // TEST MAIN
-    #[cfg(test)]
-    test_main();
     // HLT LOOP
-    println!("didn't crash!");
     cosmo_os::hlt_loop();
 }
 
