@@ -11,8 +11,14 @@ use cosmo_os::println;
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
 
+    cosmo_os::init(); // new
+
+   stack_overflow();
+
     #[cfg(test)]
     test_main();
+
+    println!("lol _start didn't crash");
 
     loop {}
 }
@@ -29,4 +35,8 @@ fn panic(info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     cosmo_os::test_panic_handler(info)
+}
+
+fn stack_overflow() {
+    stack_overflow(); // for each recursion, the return address is pushed
 }
