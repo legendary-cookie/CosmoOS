@@ -10,14 +10,10 @@ use cosmo_os::println;
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
-
-    cosmo_os::init(); // new
-
+    cosmo_os::init();
     #[cfg(test)]
     test_main();
-
-    println!("lol _start didn't crash");
-
+    println!("lol kernel didn't crash");
     loop {}
 }
 
