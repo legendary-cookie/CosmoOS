@@ -15,6 +15,8 @@ pub mod serial;
 pub mod task;
 pub mod vga_buffer;
 
+pub mod vfs;
+
 use core::panic::PanicInfo;
 
 pub trait Testable {

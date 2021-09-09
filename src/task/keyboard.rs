@@ -1,5 +1,7 @@
 use crate::print;
 use crate::println;
+use alloc::string::String;
+use alloc::vec::Vec;
 use conquer_once::spin::OnceCell;
 use core::{
     pin::Pin,
@@ -10,9 +12,12 @@ use futures_util::stream::Stream;
 use futures_util::stream::StreamExt;
 use futures_util::task::AtomicWaker;
 use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+use x86_64::registers::model_specific::KernelGsBase;
 
 static WAKER: AtomicWaker = AtomicWaker::new();
 static SCANCODE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
+
+static mut KEYBUF: Vec<char> = Vec::new();
 
 pub async fn print_keypresses() {
     let mut scancodes = ScancodeStream::new();
@@ -22,7 +27,21 @@ pub async fn print_keypresses() {
         if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
             if let Some(key) = keyboard.process_keyevent(key_event) {
                 match key {
-                    DecodedKey::Unicode(character) => print!("{}", character),
+                    DecodedKey::Unicode(character) => {
+                        print!("{}", character);
+                        unsafe {
+                            if character == '\n' {
+                                let s: String = KEYBUF.iter().collect();
+                                KEYBUF.clear();
+                                match s.as_str() {
+                                    "hello" => print!("World!\n"),
+                                    _ => print!("err\n"),
+                                }
+                            } else {
+                                KEYBUF.push(character);
+                            }
+                        }
+                    }
                     DecodedKey::RawKey(key) => print!("{:?}", key),
                 }
             }
